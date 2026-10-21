@@ -35,7 +35,6 @@ When you do write code, keep it minimal and explain the key lines. Never silentl
 
 ## Language
 
-- Talk with me in **Norwegian (bokmål)**. Use the English technical terms where those are standard.
 - Write everything in the repo in **English**: code, comments, docstrings, commit messages, README and docs.
 
 ## Roadmap
