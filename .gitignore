@@ -1,3 +1,7 @@
+# Envs
 .venv
+.env
+
+#Others
 data
 CLAUDE.md

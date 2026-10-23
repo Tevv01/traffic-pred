@@ -1,12 +1,17 @@
 import httpx
 import uuid
-import time
+from datetime import datetime
+import os
+from dotenv import load_dotenv
 
+env = load_dotenv(".env")
 
+client_name = os.environ["CLIENT_NAME"]
+url = os.environ["ENTUR_TIMETABLE_URL"]
+requestor_id = os.environ["UUID_REQUESTORID"]
 
-url = "https://api.entur.io/realtime/v1/rest/et"
-params = {"datasetId":"OST"}
-headers = {"ET-Client-Name":"vetle_personal"}
+params = {"datasetId":"OST", "requestorId" : requestor_id}
+headers = {"ET-Client-Name" : client_name}
 
 
 response = httpx.get(url, headers=headers, params=params, timeout=None)
@@ -21,6 +26,5 @@ print(f"GET RESPONSE CONTENT TYPE HEADER: {response.headers.get("Content-Type")}
 
 
 
-with (open(f"data/ostfold_data.xml", "wb")) as file:
+with (open(f"data/ost-{datetime.now().strftime("%d_%m_%H_%M_%S")}.xml", "wb")) as file:
     file.write(response.content)
-    file.close()
