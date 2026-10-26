@@ -1,6 +1,6 @@
 """Poll Entur's SIRI ET endpoint and store each raw response as gzipped XML.
 
-Run with:  python collector.py   (stop with Ctrl+C)
+Run from the repo root with:  uv run collector   (stop with Ctrl+C)
 """
 
 import gzip
@@ -9,7 +9,7 @@ import os
 import time
 import uuid
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 import httpx
@@ -58,23 +58,41 @@ def save(content: bytes, cfg: Config, fetched_at: datetime) -> Path:
 
 
 def main() -> None:
+    try:
+        run()
+    except KeyboardInterrupt:
+        log.info("stopped")
+
+
+def run() -> None:
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
     cfg = load_config()
     # A fresh id per run: the first response is a full snapshot, later ones only changes.
     requestor_id = str(uuid.uuid4())
     log.info("starting dataset=%s interval=%ss", cfg.dataset_id, cfg.interval_seconds)
 
+    # After a long pause (e.g. laptop sleep) the server-side bookmark may have expired,
+    # so a new id is used to get a complete full snapshot instead of trusting the delta.
+    max_gap = timedelta(seconds=3 * cfg.interval_seconds)
+    last_success: datetime | None = None
+
     timeout = httpx.Timeout(120.0, connect=10.0)
     with httpx.Client(headers={"ET-Client-Name": cfg.client_name}, timeout=timeout) as client:
         while True:
             started = time.monotonic()
             fetched_at = datetime.now(timezone.utc)
+            if last_success is not None and fetched_at - last_success > max_gap:
+                log.warning("%s since last successful poll, requesting full snapshot", fetched_at - last_success)
+                requestor_id = str(uuid.uuid4())
             try:
                 content = fetch(client, cfg, requestor_id)
                 if b"<Siri" not in content[:500]:
                     log.warning("unexpected response, not saved: %r", content[:200])
+                    # Same reasoning as a failed poll: the changes may count as delivered.
+                    requestor_id = str(uuid.uuid4())
                 else:
                     path = save(content, cfg, fetched_at)
+                    last_success = fetched_at
                     log.info(
                         "saved %s raw=%d bytes gz=%d bytes in %.1fs",
                         path, len(content), path.stat().st_size, time.monotonic() - started,
@@ -89,7 +107,4 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    try:
-        main()
-    except KeyboardInterrupt:
-        log.info("stopped")
+    main()

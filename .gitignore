@@ -2,6 +2,9 @@
 .venv
 .env
 
+# Python
+__pycache__/
+
 #Others
 data
 CLAUDE.md

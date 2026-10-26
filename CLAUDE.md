@@ -22,7 +22,7 @@ The ML model itself can be simple. The point is the engineering around it.
 4. **Serving**: FastAPI in a container, model loaded from a registry (e.g. MLflow), CI/CD.
 5. **Monitoring and retraining**: live accuracy, drift detection, automated retraining.
 
-**Current phase: 1.** Remind me to update this line when we move on.
+**Current phase: 2.** Remind me to update this line when we move on.
 
 ## Domain facts
 
